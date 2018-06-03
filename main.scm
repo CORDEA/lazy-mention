@@ -16,8 +16,11 @@
 ;;; date  : 2018-05-31
 
 (use makiki)
+(use rfc.http)
 
-(define token "")
+(define *token* "")
+(define *server* "slack.com")
+(define *post-message-path* "/chat.postMessage")
 
 (define-class event () (token team-id api-app-id event type event-id event-time))
 
@@ -44,12 +47,18 @@
         (slot-set! event 'event-time (assoc-ref json "event_time"))
         event))
 
-(define (main args)
-  (start-http-server :access-log #t :error-log #t :port 8080))
+(define (post-message channel text)
+  (http-post *server*
+             *post-message-path*
+             `((token ,*token*) (channel ,channel) (text ,text))
+             :secure #t))
 
 (define (handler req app)
     (let1 body (request-param-ref req "json-body" :default '())
-          (print (slot-ref (slot-ref (create-event body) 'event) 'user))
-          (respond/ok req `(json, body))))
+          (print (post-message "" ""))
+          (respond/ok req `(json ,body))))
 
-(define-http-handler "/" (with-post-json handler))
+(define (main args)
+  (start-http-server :access-log #t :error-log #t :port 8080))
+
+(define-http-handler "/mention" (with-post-json handler))
