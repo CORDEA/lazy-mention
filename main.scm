@@ -56,7 +56,11 @@
 
 (define (handler req app)
     (let1 body (request-param-ref req "json-body" :default '())
-          (print (post-message "" ""))
+          (let* ((event (create-event body)) (app-mention (slot-ref event 'event)))
+                (let ((channel (slot-ref app-mention 'channel))
+                             (user (slot-ref app-mention 'user))
+                             (text (slot-ref app-mention 'text)))
+                  (post-message channel text)))
           (respond/ok req `(json ,body))))
 
 (define (main args)
