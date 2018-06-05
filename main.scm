@@ -30,6 +30,7 @@
   (let1 app-mention (make app-mention)
         (slot-set! app-mention 'type (assoc-ref json "type"))
         (slot-set! app-mention 'user (assoc-ref json "user"))
+        (slot-set! app-mention 'text (assoc-ref json "text"))
         (slot-set! app-mention 'ts (assoc-ref json "ts"))
         (slot-set! app-mention 'channel (assoc-ref json "channel"))
         (slot-set! app-mention 'event-ts (assoc-ref json "event_ts"))
