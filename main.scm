@@ -17,10 +17,14 @@
 
 (use makiki)
 (use rfc.http)
+(use gauche.threads)
+(use control.job)
+(use control.thread-pool)
 
 (define *token* "")
 (define *server* "slack.com")
 (define *post-message-path* "/chat.postMessage")
+(define *pool* '())
 
 (define-class event () (token team-id api-app-id event type event-id event-time))
 
@@ -48,6 +52,15 @@
         (slot-set! event 'event-time (assoc-ref json "event_time"))
         event))
 
+(define (with-interval time expr)
+  (thread-sleep! time)
+  (expr))
+
+(define (start-timer time expr)
+  (add-job! *pool*
+            (cut guard (e (else (report-error e) #f))
+                 (with-interval time expr))))
+
 (define (post-message channel text)
   (http-post *server*
              *post-message-path*
@@ -60,10 +73,13 @@
                 (let ((channel (slot-ref app-mention 'channel))
                              (user (slot-ref app-mention 'user))
                              (text (slot-ref app-mention 'text)))
+                  (start-timer 5 (cut print "exec"))
                   (post-message channel text)))
           (respond/ok req `(json ,body))))
 
 (define (main args)
-  (start-http-server :access-log #t :error-log #t :port 8080))
+  (set! *pool* (make-thread-pool 10))
+  (start-http-server :access-log #t :error-log #t :port 8080)
+  (terminate-all! *pool*))
 
 (define-http-handler "/mention" (with-post-json handler))
