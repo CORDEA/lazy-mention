@@ -26,6 +26,7 @@
 (define *token* "")
 (define *server* "slack.com")
 (define *post-message-path* "/chat.postMessage")
+(define *date-format* "~Y/~m/~d-~H:~M")
 (define *pool* '())
 
 (define-class event () (token team-id api-app-id event type event-id event-time))
@@ -67,7 +68,15 @@
     command))
 
 (define (parse-date date)
-  (date->time-utc (string->date date "~Y/~m/~d-~H:~M")))
+  (guard
+    (e (else (date->time-utc
+               (string->date
+                 (string-append
+                   (number->string (slot-ref (current-date) 'year))
+                   "/"
+                   date)
+                 *date-format*))))
+    (date->time-utc (string->date date *date-format*))))
 
 (define (difference-from-now time)
   (time-second (time-difference time (current-time))))
