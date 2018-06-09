@@ -17,6 +17,7 @@
 
 (use makiki)
 (use srfi-13)
+(use srfi-19)
 (use rfc.http)
 (use gauche.threads)
 (use control.job)
@@ -59,10 +60,17 @@
 (define (parse-command text)
   (let ((raw (string-split text " ")) (command (make command)))
     (slot-set! command 'user (list-ref raw 1))
-    (slot-set! command 'time (string->number (list-ref raw 2)))
+    (slot-set! command 'time
+               (difference-from-now (parse-date (list-ref raw 2))))
     (slot-set! command 'text
                (string-concatenate (intersperse " " (drop raw 3))))
     command))
+
+(define (parse-date date)
+  (date->time-utc (string->date date "~Y/~m/~d-~H:~M")))
+
+(define (difference-from-now time)
+  (time-second (time-difference time (current-time))))
 
 (define (text-with-mention command)
   (string-concatenate `("<@" ,(slot-ref command 'user) "> " ,(slot-ref command 'text))))
