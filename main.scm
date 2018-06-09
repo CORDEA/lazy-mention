@@ -64,6 +64,9 @@
                (string-concatenate (intersperse " " (drop raw 3))))
     command))
 
+(define (text-with-mention command)
+  (string-concatenate `("<@" ,(slot-ref command 'user) "> " ,(slot-ref command 'text))))
+
 (define (with-interval time expr)
   (thread-sleep! time)
   (expr))
