@@ -16,6 +16,7 @@
 ;;; date  : 2018-05-31
 
 (use makiki)
+(use srfi-13)
 (use rfc.http)
 (use gauche.threads)
 (use control.job)
@@ -29,6 +30,9 @@
 (define-class event () (token team-id api-app-id event type event-id event-time))
 
 (define-class app-mention () (type user text ts channel event-ts))
+
+; @mention user time text...
+(define-class command () (user time text))
 
 (define (parse-app-mention json)
   (let1 app-mention (make app-mention)
@@ -51,6 +55,14 @@
         (slot-set! event 'event-id (assoc-ref json "event_id"))
         (slot-set! event 'event-time (assoc-ref json "event_time"))
         event))
+
+(define (parse-command text)
+  (let ((raw (string-split text " ")) (command (make command)))
+    (slot-set! command 'user (list-ref raw 1))
+    (slot-set! command 'time (string->number (list-ref raw 2)))
+    (slot-set! command 'text
+               (string-concatenate (intersperse " " (drop raw 3))))
+    command))
 
 (define (with-interval time expr)
   (thread-sleep! time)
