@@ -107,6 +107,6 @@
 (define (main args)
   (set! *pool* (make-thread-pool 10))
   (start-http-server :access-log #t :error-log #t :port 8080)
-  (terminate-all! *pool*))
+  (terminate-all! *pool* :force-timeout 3000))
 
 (define-http-handler "/mention" (with-post-json handler))
