@@ -82,14 +82,18 @@
              `((token ,*token*) (channel ,channel) (text ,text))
              :secure #t))
 
+(define (post-message-with-delay channel command)
+  (start-timer (slot-ref command 'time)
+               (cut post-message channel (text-with-mention command))))
+
 (define (handler req app)
     (let1 body (request-param-ref req "json-body" :default '())
           (let* ((event (create-event body)) (app-mention (slot-ref event 'event)))
                 (let ((channel (slot-ref app-mention 'channel))
                              (user (slot-ref app-mention 'user))
-                             (text (slot-ref app-mention 'text)))
-                  (start-timer 5 (cut print "exec"))
-                  (post-message channel text)))
+                             (command (parse-command (slot-ref app-mention 'text))))
+                  (post-message-with-delay channel command)
+                  (post-message channel "")))
           (respond/ok req `(json ,body))))
 
 (define (main args)
