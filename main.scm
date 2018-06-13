@@ -27,6 +27,8 @@
 (define *server* "slack.com")
 (define *post-message-path* "/chat.postMessage")
 (define *date-format* "~Y/~m/~d-~H:~M")
+(define *type-event* "event_callback")
+(define *type-verification* "url_verification")
 (define *pool* '())
 
 (define-class verification () (token challenge type))
@@ -112,15 +114,21 @@
   (start-timer (slot-ref command 'time)
                (cut post-message channel (text-with-mention command))))
 
+(define (mention-handler req body)
+  (let* ((event (create-event body)) (app-mention (slot-ref event 'event)))
+    (let ((channel (slot-ref app-mention 'channel))
+          (user (slot-ref app-mention 'user))
+          (command (parse-command (slot-ref app-mention 'text))))
+      (post-message-with-delay channel command)
+      (post-message channel "")))
+  (respond/ok req `(json ,body)))
+
 (define (handler req app)
-    (let1 body (request-param-ref req "json-body" :default '())
-          (let* ((event (create-event body)) (app-mention (slot-ref event 'event)))
-                (let ((channel (slot-ref app-mention 'channel))
-                             (user (slot-ref app-mention 'user))
-                             (command (parse-command (slot-ref app-mention 'text))))
-                  (post-message-with-delay channel command)
-                  (post-message channel "")))
-          (respond/ok req `(json ,body))))
+  (let*
+    ((body (request-param-ref req "json-body" :default '()))
+     (type (assoc-ref body "type")))
+    (cond
+      ((equal? type *type-event*) (mention-handler req body)))))
 
 (define (main args)
   (set! *pool* (make-thread-pool 10))
