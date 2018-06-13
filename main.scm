@@ -29,12 +29,21 @@
 (define *date-format* "~Y/~m/~d-~H:~M")
 (define *pool* '())
 
+(define-class verification () (token challenge type))
+
 (define-class event () (token team-id api-app-id event type event-id event-time))
 
 (define-class app-mention () (type user text ts channel event-ts))
 
 ; @mention user time text...
 (define-class command () (user time text))
+
+(define (parse-verification json)
+  (let1 verification (make verification)
+        (slot-set! verification 'token (assoc-ref json "token"))
+        (slot-set! verification 'challenge (assoc-ref json "challenge"))
+        (slot-set! verification 'type (assoc-ref json "type"))
+        verification))
 
 (define (parse-app-mention json)
   (let1 app-mention (make app-mention)
