@@ -123,12 +123,17 @@
       (post-message channel "")))
   (respond/ok req `(json ,body)))
 
+(define (verification-handler req body)
+  (let* ((verification (parse-verification body)) (challenge (slot-ref verification 'challenge)))
+    (respond/ok req challenge :content-type "text/plain")))
+
 (define (handler req app)
   (let*
     ((body (request-param-ref req "json-body" :default '()))
      (type (assoc-ref body "type")))
     (cond
-      ((equal? type *type-event*) (mention-handler req body)))))
+      ((equal? type *type-event*) (mention-handler req body))
+      ((equal? type *type-verification*) (verification-handler req body)))))
 
 (define (main args)
   (set! *pool* (make-thread-pool 10))
